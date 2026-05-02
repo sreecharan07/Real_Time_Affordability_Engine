@@ -1,0 +1,69 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-base: #0f1117;
+  --bg-surface: #161b27;
+  --border: #1e2535;
+  --text-primary: #f0f4ff;
+  --text-secondary: #a8b4cc;
+  --text-muted: #5a6480;
+  --accent: #3b6ef8;
+  --accent-subtle: #1a2d5a;
+  --safe: #22c55e;
+  --safe-subtle: #052e16;
+  --warning: #f59e0b;
+  --warning-subtle: #1c1300;
+  --danger: #ef4444;
+  --danger-subtle: #2d0a0a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+.nav-active {
+  background: var(--accent-subtle);
+  color: var(--accent);
+}
+
+.nav-inactive {
+  color: var(--text-muted);
+}
+
+.nav-inactive:hover {
+  background: var(--bg-base);
+  color: var(--text-secondary);
+}
+
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input, select {
+  font-family: inherit;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-base);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
