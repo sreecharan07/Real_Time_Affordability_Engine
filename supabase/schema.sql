@@ -7,7 +7,8 @@
 -- Stores the user's core financial configuration
 -- ============================================================
 create table if not exists financial_profiles (
-  id            serial primary key,
+  id            uuid primary key default uuid_generate_v4(),
+  user_id       uuid not null references auth.users(id) on delete cascade,
   monthly_income  numeric       not null,
   current_balance numeric       not null,
   savings_goal    numeric       default 250,
@@ -16,12 +17,16 @@ create table if not exists financial_profiles (
   created_at      timestamptz   default now()
 );
 
+ALTER TABLE financial_profiles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "user_profile" ON financial_profiles USING (auth.uid() = user_id);
+
 -- ============================================================
 -- Table: bills
 -- Fixed monthly expenses with due dates
 -- ============================================================
 create table if not exists bills (
-  id           serial primary key,
+  id           uuid primary key default uuid_generate_v4(),
+  user_id       uuid not null references auth.users(id) on delete cascade,
   name         text      not null,
   amount       numeric   not null,
   due_day      integer   not null,   -- day of month (1-31)
@@ -29,6 +34,9 @@ create table if not exists bills (
   is_recurring boolean   default true,
   created_at   timestamptz default now()
 );
+
+ALTER TABLE bills ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "user_bills" ON bills USING (auth.uid() = user_id);
 
 -- Valid categories: rent, utilities, insurance, phone, internet,
 --                   groceries, transport, credit_card, other
@@ -38,13 +46,17 @@ create table if not exists bills (
 -- Recurring subscription services
 -- ============================================================
 create table if not exists subscriptions (
-  id            serial primary key,
+  id            uuid primary key default uuid_generate_v4(),
+  user_id       uuid not null references auth.users(id) on delete cascade,
   name          text      not null,
   amount        numeric   not null,
   billing_cycle text      default 'monthly',  -- monthly | annual | weekly
   category      text      default 'other',
   created_at    timestamptz default now()
 );
+
+ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "user_subscriptions" ON subscriptions USING (auth.uid() = user_id);
 
 -- Valid categories: streaming, music, fitness, software, news, gaming, other
 
@@ -53,7 +65,8 @@ create table if not exists subscriptions (
 -- Log of every affordability check run by the user
 -- ============================================================
 create table if not exists affordability_checks (
-  id                serial primary key,
+  id                uuid primary key default uuid_generate_v4(),
+  user_id           uuid not null references auth.users(id) on delete cascade,
   purchase_amount   numeric   not null,
   category          text,
   merchant_name     text,
@@ -67,9 +80,26 @@ create table if not exists affordability_checks (
   created_at        timestamptz default now()
 );
 
+ALTER TABLE affordability_checks ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "user_checks" ON affordability_checks USING (auth.uid() = user_id);
+
+
 -- ============================================================
--- Demo seed data (optional — matches the app defaults)
+-- Table: accounts
+-- User multi‑account balances (checking, savings, credit card)
 -- ============================================================
+create table if not exists accounts (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  name text not null,          -- e.g., 'Checking', 'Savings', 'Credit Card'
+  type text not null,          -- checking | savings | credit_card
+  balance numeric not null default 0,
+  created_at timestamptz default now()
+);
+
+ALTER TABLE accounts ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "user_accounts" ON accounts USING (auth.uid() = user_id);
+
 insert into financial_profiles (monthly_income, current_balance, savings_goal, safety_buffer, payday_date)
 values (3200, 1850, 250, 300, 1);
 

@@ -1,4 +1,5 @@
 import supabase from './_supabase.js';
+import { requireAuth } from './auth.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -7,12 +8,13 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(204).end();
 
   try {
-    if (req.method === 'GET') {
+      await requireAuth(req, res, async () => {
+            const userId = req.user.id;
       const [profileRes, billsRes, subsRes, checksRes] = await Promise.all([
-        supabase.from('financial_profiles').select('*').order('id', { ascending: false }).limit(1).single(),
-        supabase.from('bills').select('*'),
-        supabase.from('subscriptions').select('*'),
-        supabase.from('affordability_checks').select('*').order('created_at', { ascending: false }).limit(50)
+        supabase.from('financial_profiles').select('*').eq('user_id', userId).order('id', { ascending: false }).limit(1).single(),
+        supabase.from('bills').select('*').eq('user_id', userId),
+        supabase.from('subscriptions').select('*').eq('user_id', userId),
+        supabase.from('affordability_checks').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(50)
       ]);
 
       const profile = profileRes.data;
@@ -183,11 +185,9 @@ export default async function handler(req, res) {
         avgScore,
         avgPurchaseAmount: parseFloat(avgPurchaseAmount.toFixed(2))
       });
-    }
-
-    res.status(405).json({ error: 'Method not allowed' });
   } catch (err) {
     console.error('Insights API error:', err);
     res.status(500).json({ error: err.message });
   }
-}
+});
+
