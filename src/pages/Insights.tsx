@@ -14,15 +14,17 @@ import { motion } from 'framer-motion';
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface InsightsData {
   totalFixedExpenses: number; totalSubscriptions: number; totalObligations: number;
-  freeCashFlow: number; spendingRiskLevel: 'LOW'|'MEDIUM'|'HIGH'; spendingRatio: number;
+  freeCashFlow: number; spendingRiskLevel: 'LOW' | 'MEDIUM' | 'HIGH'; spendingRatio: number;
   monthlyIncome: number; currentBalance: number; savingsGoal: number; safetyBuffer: number;
   paydayDate: number;
-  trend: any[]; billsByCategory: Record<string,number>; billsData: any[]; subsData: any[];
-  decisionBreakdown: { safe:number; risky:number; not_recommended:number };
+  trend: any[]; billsByCategory: Record<string, number>; billsData: any[]; subsData: any[];
+  decisionBreakdown: { safe: number; risky: number; not_recommended: number };
   scoreBuckets: any[]; categorySpend: any[]; cashflowProjection: any[];
   waterfallData: any[]; checksScatter: any[];
   totalChecks: number; avgScore: number; avgPurchaseAmount: number; empty?: boolean;
 }
+
+
 
 // ─── Theme ───────────────────────────────────────────────────────────────────
 const C = {
@@ -30,16 +32,16 @@ const C = {
   muted: '#5a6480', surface: '#161b27', base: '#0f1117', text: '#f0f4ff',
   border: '#1e2535', purple: '#8b5cf6', cyan: '#06b6d4', teal: '#10b981', pink: '#ec4899',
 };
-const CAT_COLORS: Record<string,string> = {
+const CAT_COLORS: Record<string, string> = {
   rent: C.accent, utilities: C.purple, insurance: C.cyan, phone: C.warning,
   internet: C.teal, groceries: '#3b82f6', transport: C.pink, credit_card: C.danger,
   other: C.muted, streaming: C.accent, music: C.teal, fitness: C.warning,
   software: C.purple, gaming: C.pink, news: C.cyan,
 };
 const RISK_CFG = {
-  LOW:    { color: C.safe,    label: 'Low Risk',    desc: 'Obligations well within income.' },
+  LOW: { color: C.safe, label: 'Low Risk', desc: 'Obligations well within income.' },
   MEDIUM: { color: C.warning, label: 'Medium Risk', desc: 'Obligations are moderate. Monitor.' },
-  HIGH:   { color: C.danger,  label: 'High Risk',   desc: 'Obligations high vs income. Review.' },
+  HIGH: { color: C.danger, label: 'High Risk', desc: 'Obligations high vs income. Review.' },
 };
 
 // ─── Shared tooltip style ─────────────────────────────────────────────────────
@@ -206,13 +208,13 @@ function generateReport(data: InsightsData): string {
     <thead><tr><th>Metric</th><th>Value</th><th>Status</th></tr></thead>
     <tbody>
       ${tableRow(['Spending Ratio', `${data.spendingRatio}%`, `<span class="badge badge-${data.spendingRiskLevel === 'LOW' ? 'safe' : data.spendingRiskLevel === 'MEDIUM' ? 'risky' : 'danger'}">${risk.label}</span>`])}
-      ${tableRow(['Total Obligations', `$${data.totalObligations.toLocaleString()}`, `${(data.totalObligations/data.monthlyIncome*100).toFixed(1)}% of income`])}
+      ${tableRow(['Total Obligations', `$${data.totalObligations.toLocaleString()}`, `${(data.totalObligations / data.monthlyIncome * 100).toFixed(1)}% of income`])}
       ${tableRow(['Free Cash Flow', `$${data.freeCashFlow.toLocaleString()}`, data.freeCashFlow >= 0 ? '<span class="badge badge-safe">Positive</span>' : '<span class="badge badge-danger">Negative</span>'])}
       ${tableRow(['Safety Buffer', `$${data.safetyBuffer.toLocaleString()}`, 'Protected reserve'])}
       ${tableRow(['Savings Goal', `$${data.savingsGoal.toLocaleString()}/mo`, 'Monthly target'])}
     </tbody>
   </table>
-  <div class="risk-bar"><div class="risk-fill" style="width:${Math.min(data.spendingRatio,100)}%;background:${risk.color}"></div></div>
+  <div class="risk-bar"><div class="risk-fill" style="width:${Math.min(data.spendingRatio, 100)}%;background:${risk.color}"></div></div>
   <p style="font-size:12px;color:#5a6480;margin-bottom:24px">${risk.desc}</p>
 
   <!-- Section 3: Bills -->
@@ -220,10 +222,10 @@ function generateReport(data: InsightsData): string {
   <table>
     <thead><tr><th>Bill</th><th>Category</th><th>Due Day</th><th>Monthly Amount</th><th>Annual Cost</th></tr></thead>
     <tbody>
-      ${data.billsData.sort((a,b) => b.amount - a.amount).map(b =>
-        tableRow([b.name, b.category?.replace('_',' '), `Day ${b.due_day}`, `$${b.amount.toLocaleString()}`, `$${(b.amount*12).toLocaleString()}`])
-      ).join('')}
-      <tr style="border-top:2px solid #1e2535"><td style="font-weight:700;color:#f0f4ff">TOTAL</td><td></td><td></td><td class="num">$${data.totalFixedExpenses.toLocaleString()}</td><td class="num">$${(data.totalFixedExpenses*12).toLocaleString()}</td></tr>
+      ${data.billsData.sort((a, b) => b.amount - a.amount).map(b =>
+    tableRow([b.name, b.category?.replace('_', ' '), `Day ${b.due_day}`, `$${b.amount.toLocaleString()}`, `$${(b.amount * 12).toLocaleString()}`])
+  ).join('')}
+      <tr style="border-top:2px solid #1e2535"><td style="font-weight:700;color:#f0f4ff">TOTAL</td><td></td><td></td><td class="num">$${data.totalFixedExpenses.toLocaleString()}</td><td class="num">$${(data.totalFixedExpenses * 12).toLocaleString()}</td></tr>
     </tbody>
   </table>
 
@@ -232,10 +234,10 @@ function generateReport(data: InsightsData): string {
   <table>
     <thead><tr><th>Service</th><th>Category</th><th>Billing</th><th>Monthly</th><th>Annual</th></tr></thead>
     <tbody>
-      ${data.subsData.sort((a,b) => b.amount - a.amount).map(s =>
-        tableRow([s.name, s.category, 'Monthly', `$${s.amount.toFixed(2)}`, `$${s.annual.toFixed(2)}`])
-      ).join('')}
-      <tr style="border-top:2px solid #1e2535"><td style="font-weight:700;color:#f0f4ff">TOTAL</td><td></td><td></td><td class="num">$${data.totalSubscriptions.toFixed(2)}</td><td class="num">$${(data.totalSubscriptions*12).toFixed(2)}</td></tr>
+      ${data.subsData.sort((a, b) => b.amount - a.amount).map(s =>
+    tableRow([s.name, s.category, 'Monthly', `$${s.amount.toFixed(2)}`, `$${s.annual.toFixed(2)}`])
+  ).join('')}
+      <tr style="border-top:2px solid #1e2535"><td style="font-weight:700;color:#f0f4ff">TOTAL</td><td></td><td></td><td class="num">$${data.totalSubscriptions.toFixed(2)}</td><td class="num">$${(data.totalSubscriptions * 12).toFixed(2)}</td></tr>
     </tbody>
   </table>
 
@@ -244,9 +246,9 @@ function generateReport(data: InsightsData): string {
   <table>
     <thead><tr><th>Decision</th><th>Count</th><th>% of Total</th></tr></thead>
     <tbody>
-      ${tableRow(['SAFE', `${data.decisionBreakdown.safe}`, data.totalChecks > 0 ? `${(data.decisionBreakdown.safe/data.totalChecks*100).toFixed(0)}%` : '0%'])}
-      ${tableRow(['RISKY', `${data.decisionBreakdown.risky}`, data.totalChecks > 0 ? `${(data.decisionBreakdown.risky/data.totalChecks*100).toFixed(0)}%` : '0%'])}
-      ${tableRow(['NOT RECOMMENDED', `${data.decisionBreakdown.not_recommended}`, data.totalChecks > 0 ? `${(data.decisionBreakdown.not_recommended/data.totalChecks*100).toFixed(0)}%` : '0%'])}
+      ${tableRow(['SAFE', `${data.decisionBreakdown.safe}`, data.totalChecks > 0 ? `${(data.decisionBreakdown.safe / data.totalChecks * 100).toFixed(0)}%` : '0%'])}
+      ${tableRow(['RISKY', `${data.decisionBreakdown.risky}`, data.totalChecks > 0 ? `${(data.decisionBreakdown.risky / data.totalChecks * 100).toFixed(0)}%` : '0%'])}
+      ${tableRow(['NOT RECOMMENDED', `${data.decisionBreakdown.not_recommended}`, data.totalChecks > 0 ? `${(data.decisionBreakdown.not_recommended / data.totalChecks * 100).toFixed(0)}%` : '0%'])}
       <tr style="border-top:2px solid #1e2535"><td style="font-weight:700;color:#f0f4ff">TOTAL</td><td class="num">${data.totalChecks}</td><td class="num">Avg Score: ${data.avgScore}/100</td></tr>
     </tbody>
   </table>
@@ -257,12 +259,12 @@ function generateReport(data: InsightsData): string {
   <table>
     <thead><tr><th>Category</th><th>Checks</th><th>Total Spend</th><th>Safe</th><th>Risky</th><th>Not Rec.</th></tr></thead>
     <tbody>
-      ${data.categorySpend.sort((a,b) => b.amount - a.amount).map(c =>
-        tableRow([c.category, `${c.total}`, `$${c.amount.toLocaleString()}`,
-          `<span class="badge badge-safe">${c.safe}</span>`,
-          `<span class="badge badge-risky">${c.risky}</span>`,
-          `<span class="badge badge-danger">${c.not_recommended}</span>`])
-      ).join('')}
+      ${data.categorySpend.sort((a, b) => b.amount - a.amount).map(c =>
+    tableRow([c.category, `${c.total}`, `$${c.amount.toLocaleString()}`,
+    `<span class="badge badge-safe">${c.safe}</span>`,
+    `<span class="badge badge-risky">${c.risky}</span>`,
+    `<span class="badge badge-danger">${c.not_recommended}</span>`])
+  ).join('')}
     </tbody>
   </table>` : ''}
 
@@ -272,7 +274,7 @@ function generateReport(data: InsightsData): string {
     <thead><tr><th>Day</th><th>Events</th><th>Income</th><th>Expenses</th><th>Balance</th><th>Status</th></tr></thead>
     <tbody>
       ${data.cashflowProjection.filter(d => d.events || d.income > 0 || d.expenses > 0).map(d =>
-        `<tr>
+    `<tr>
           <td>Day ${d.day}</td>
           <td class="cf-event">${d.events || '—'}</td>
           <td class="num" style="color:${C.safe}">${d.income > 0 ? `+$${d.income.toLocaleString()}` : '—'}</td>
@@ -280,7 +282,7 @@ function generateReport(data: InsightsData): string {
           <td class="num" style="color:${d.balance < 0 ? C.danger : d.aboveBuffer ? C.text : C.warning}">$${d.balance.toLocaleString()}</td>
           <td>${d.aboveBuffer ? '<span class="badge badge-safe">Safe</span>' : '<span class="badge badge-danger">Below Buffer</span>'}</td>
         </tr>`
-      ).join('')}
+  ).join('')}
     </tbody>
   </table>
 
@@ -290,13 +292,13 @@ function generateReport(data: InsightsData): string {
     <thead><tr><th>Month</th><th>Total Checks</th><th>Safe</th><th>Risky</th><th>Not Rec.</th><th>Avg Score</th><th>Total Spend</th></tr></thead>
     <tbody>
       ${data.trend.map(t =>
-        tableRow([t.month, `${t.total_checks}`,
-          `<span class="badge badge-safe">${t.safe}</span>`,
-          `<span class="badge badge-risky">${t.risky}</span>`,
-          `<span class="badge badge-danger">${t.not_recommended}</span>`,
-          t.avg_score > 0 ? `${t.avg_score}/100` : '—',
-          t.total_spend > 0 ? `$${t.total_spend.toLocaleString()}` : '—'])
-      ).join('')}
+    tableRow([t.month, `${t.total_checks}`,
+    `<span class="badge badge-safe">${t.safe}</span>`,
+    `<span class="badge badge-risky">${t.risky}</span>`,
+    `<span class="badge badge-danger">${t.not_recommended}</span>`,
+    t.avg_score > 0 ? `${t.avg_score}/100` : '—',
+    t.total_spend > 0 ? `$${t.total_spend.toLocaleString()}` : '—'])
+  ).join('')}
     </tbody>
   </table>
 
@@ -313,12 +315,24 @@ function generateReport(data: InsightsData): string {
 export default function Insights() {
   const [data, setData] = useState<InsightsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [activeSection, setActiveSection] = useState('overview');
 
   const fetchData = () => {
     setLoading(true);
-    fetch('/api/insights').then(r => r.json()).then(setData).finally(() => setLoading(false));
+    setError(null);
+    fetch('/api/insights')
+      .then(r => r.json())
+      .then(res => {
+        if (res.error) {
+          setError(res.error);
+        } else {
+          setData(res);
+        }
+      })
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
   };
   useEffect(() => { fetchData(); }, []);
 
@@ -346,6 +360,15 @@ export default function Insights() {
     </div>
   );
 
+  if (error) return (
+    <div className="flex flex-col items-center justify-center h-96 gap-4 p-6 text-center">
+      <AlertTriangle className="w-12 h-12" style={{ color: C.danger }} />
+      <h2 className="text-xl font-bold">Failed to load analytics</h2>
+      <p className="text-sm max-w-md" style={{ color: C.muted }}>{error}</p>
+      <button onClick={fetchData} className="px-4 py-2 rounded-xl bg-slate-800 font-semibold mt-2">Try Again</button>
+    </div>
+  );
+
   if (!data || data.empty) return (
     <div className="flex flex-col items-center justify-center h-96 gap-4">
       <BarChart3 className="w-12 h-12" style={{ color: C.muted }} />
@@ -355,25 +378,25 @@ export default function Insights() {
 
   const risk = RISK_CFG[data.spendingRiskLevel];
   const decisionPie = [
-    { name: 'Safe',            value: data.decisionBreakdown.safe,            color: C.safe },
-    { name: 'Risky',           value: data.decisionBreakdown.risky,           color: C.warning },
+    { name: 'Safe', value: data.decisionBreakdown.safe, color: C.safe },
+    { name: 'Risky', value: data.decisionBreakdown.risky, color: C.warning },
     { name: 'Not Recommended', value: data.decisionBreakdown.not_recommended, color: C.danger },
   ];
   const obligationPie = [
-    { name: 'Fixed Bills',   value: data.totalFixedExpenses,  color: C.danger },
-    { name: 'Subscriptions', value: data.totalSubscriptions,  color: C.warning },
-    { name: 'Savings Goal',  value: data.savingsGoal,         color: C.safe },
-    { name: 'Safety Buffer', value: data.safetyBuffer,        color: C.purple },
-    { name: 'Free Cash',     value: Math.max(data.freeCashFlow, 0), color: C.teal },
+    { name: 'Fixed Bills', value: data.totalFixedExpenses, color: C.danger },
+    { name: 'Subscriptions', value: data.totalSubscriptions, color: C.warning },
+    { name: 'Savings Goal', value: data.savingsGoal, color: C.safe },
+    { name: 'Safety Buffer', value: data.safetyBuffer, color: C.purple },
+    { name: 'Free Cash', value: Math.max(data.freeCashFlow, 0), color: C.teal },
   ];
 
   const sections = [
-    { id: 'overview',      label: 'Overview' },
-    { id: 'cashflow',      label: 'Cash Flow' },
-    { id: 'bills',         label: 'Bills' },
+    { id: 'overview', label: 'Overview' },
+    { id: 'cashflow', label: 'Cash Flow' },
+    { id: 'bills', label: 'Bills' },
     { id: 'subscriptions', label: 'Subscriptions' },
-    { id: 'checks',        label: 'Checks' },
-    { id: 'trend',         label: 'Trend' },
+    { id: 'checks', label: 'Checks' },
+    { id: 'trend', label: 'Trend' },
   ];
 
   return (
@@ -419,16 +442,16 @@ export default function Insights() {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
           {/* KPI row */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <KPI label="Monthly Income"   value={`$${data.monthlyIncome.toLocaleString()}`}    sub="CAD"               color={C.accent}  icon={TrendingUp} />
-            <KPI label="Current Balance"  value={`$${data.currentBalance.toLocaleString()}`}   sub="Available"         color={C.safe}    icon={DollarSign} />
-            <KPI label="Free Cash Flow"   value={`$${data.freeCashFlow.toLocaleString()}`}      sub="After obligations" color={data.freeCashFlow >= 0 ? C.safe : C.danger} icon={data.freeCashFlow >= 0 ? TrendingUp : TrendingDown} />
-            <KPI label="Spending Ratio"   value={`${data.spendingRatio}%`}                      sub={risk.label}        color={risk.color} icon={PieIcon} />
+            <KPI label="Monthly Income" value={`$${data.monthlyIncome.toLocaleString()}`} sub="CAD" color={C.accent} icon={TrendingUp} />
+            <KPI label="Current Balance" value={`$${data.currentBalance.toLocaleString()}`} sub="Available" color={C.safe} icon={DollarSign} />
+            <KPI label="Free Cash Flow" value={`$${data.freeCashFlow.toLocaleString()}`} sub="After obligations" color={data.freeCashFlow >= 0 ? C.safe : C.danger} icon={data.freeCashFlow >= 0 ? TrendingUp : TrendingDown} />
+            <KPI label="Spending Ratio" value={`${data.spendingRatio}%`} sub={risk.label} color={risk.color} icon={PieIcon} />
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <KPI label="Total Obligations" value={`$${data.totalObligations.toLocaleString()}`} sub="Bills+subs+savings" color={C.danger}  icon={AlertTriangle} />
-            <KPI label="Safety Buffer"     value={`$${data.safetyBuffer.toLocaleString()}`}     sub="Protected"         color={C.purple}  icon={Shield} />
-            <KPI label="Total Checks"      value={`${data.totalChecks}`}                         sub="Affordability runs" color={C.accent} icon={Zap} />
-            <KPI label="Avg Score"         value={`${data.avgScore}/100`}                        sub="Affordability score" color={data.avgScore >= 70 ? C.safe : data.avgScore >= 40 ? C.warning : C.danger} icon={Target} />
+            <KPI label="Total Obligations" value={`$${data.totalObligations.toLocaleString()}`} sub="Bills+subs+savings" color={C.danger} icon={AlertTriangle} />
+            <KPI label="Safety Buffer" value={`$${data.safetyBuffer.toLocaleString()}`} sub="Protected" color={C.purple} icon={Shield} />
+            <KPI label="Total Checks" value={`${data.totalChecks}`} sub="Affordability runs" color={C.accent} icon={Zap} />
+            <KPI label="Avg Score" value={`${data.avgScore}/100`} sub="Affordability score" color={data.avgScore >= 70 ? C.safe : data.avgScore >= 40 ? C.warning : C.danger} icon={Target} />
           </div>
 
           {/* Waterfall + Obligation pie */}
@@ -440,13 +463,13 @@ export default function Insights() {
                   <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
                   <XAxis dataKey="name" tick={{ fill: C.muted, fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: C.muted, fontSize: 11 }} axisLine={false} tickLine={false}
-                    tickFormatter={v => `$${Math.abs(v/1000).toFixed(0)}k`} />
+                    tickFormatter={v => `$${Math.abs(v / 1000).toFixed(0)}k`} />
                   <Tooltip contentStyle={ttStyle} formatter={(v: any) => [`$${Math.abs(v).toLocaleString()}`, '']} />
-                  <Bar dataKey="value" radius={[6,6,0,0]}>
+                  <Bar dataKey="value" radius={[6, 6, 0, 0]}>
                     {data.waterfallData.map((entry, i) => (
                       <Cell key={i} fill={entry.type === 'income' ? C.accent : entry.type === 'result' ? (entry.value >= 0 ? C.safe : C.danger) : C.danger} />
                     ))}
-                    <LabelList dataKey="value" position="top" formatter={(v: any) => `$${Math.abs(v/1000).toFixed(1)}k`}
+                    <LabelList dataKey="value" position="top" formatter={(v: any) => `$${Math.abs(v / 1000).toFixed(1)}k`}
                       style={{ fill: C.muted, fontSize: 10 }} />
                   </Bar>
                 </BarChart>
@@ -521,16 +544,16 @@ export default function Insights() {
               </div>
               <ResponsiveContainer width="100%" height={160}>
                 <BarChart data={[
-                  { name: 'Fixed Bills',   value: data.totalFixedExpenses,  pct: data.totalFixedExpenses/data.monthlyIncome*100 },
-                  { name: 'Subscriptions', value: data.totalSubscriptions,  pct: data.totalSubscriptions/data.monthlyIncome*100 },
-                  { name: 'Savings Goal',  value: data.savingsGoal,         pct: data.savingsGoal/data.monthlyIncome*100 },
-                  { name: 'Safety Buffer', value: data.safetyBuffer,        pct: data.safetyBuffer/data.monthlyIncome*100 },
+                  { name: 'Fixed Bills', value: data.totalFixedExpenses, pct: data.totalFixedExpenses / data.monthlyIncome * 100 },
+                  { name: 'Subscriptions', value: data.totalSubscriptions, pct: data.totalSubscriptions / data.monthlyIncome * 100 },
+                  { name: 'Savings Goal', value: data.savingsGoal, pct: data.savingsGoal / data.monthlyIncome * 100 },
+                  { name: 'Safety Buffer', value: data.safetyBuffer, pct: data.safetyBuffer / data.monthlyIncome * 100 },
                 ]} layout="vertical" margin={{ top: 0, right: 60, bottom: 0, left: 90 }}>
                   <XAxis type="number" domain={[0, 100]} tick={{ fill: C.muted, fontSize: 10 }}
                     tickFormatter={v => `${v}%`} axisLine={false} tickLine={false} />
                   <YAxis type="category" dataKey="name" tick={{ fill: C.muted, fontSize: 11 }} axisLine={false} tickLine={false} width={88} />
                   <Tooltip contentStyle={ttStyle} formatter={(v: any) => [`${v.toFixed(1)}%`, '% of income']} />
-                  <Bar dataKey="pct" radius={[0,4,4,0]}>
+                  <Bar dataKey="pct" radius={[0, 4, 4, 0]}>
                     {[C.danger, C.warning, C.safe, C.purple].map((color, i) => <Cell key={i} fill={color} />)}
                     <LabelList dataKey="pct" position="right" formatter={(v: any) => `${v.toFixed(1)}%`}
                       style={{ fill: C.muted, fontSize: 10 }} />
@@ -591,11 +614,11 @@ export default function Insights() {
                   <XAxis dataKey="day" tick={{ fill: C.muted, fontSize: 10 }} axisLine={false} tickLine={false}
                     tickFormatter={v => `D${v}`} />
                   <YAxis tick={{ fill: C.muted, fontSize: 10 }} axisLine={false} tickLine={false}
-                    tickFormatter={v => `$${Math.abs(v/1000).toFixed(1)}k`} />
+                    tickFormatter={v => `$${Math.abs(v / 1000).toFixed(1)}k`} />
                   <Tooltip contentStyle={ttStyle} labelFormatter={l => `Day ${l}`}
                     formatter={(v: any) => [`$${Math.abs(v).toLocaleString()}`, '']} />
-                  <Bar dataKey="income" name="Income" fill={C.safe} radius={[4,4,0,0]} />
-                  <Bar dataKey="expenses" name="Expenses" fill={C.danger} radius={[4,4,0,0]} />
+                  <Bar dataKey="income" name="Income" fill={C.safe} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="expenses" name="Expenses" fill={C.danger} radius={[4, 4, 0, 0]} />
                   <Legend wrapperStyle={{ fontSize: 11, color: C.muted }} />
                 </BarChart>
               </ResponsiveContainer>
@@ -634,15 +657,15 @@ export default function Insights() {
             <Card>
               <CardTitle icon={CreditCard} title="Bills by Amount" color={C.accent} />
               <ResponsiveContainer width="100%" height={320}>
-                <BarChart data={[...data.billsData].sort((a,b) => b.amount - a.amount)}
+                <BarChart data={[...data.billsData].sort((a, b) => b.amount - a.amount)}
                   layout="vertical" margin={{ top: 0, right: 60, bottom: 0, left: 100 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke={C.border} horizontal={false} />
                   <XAxis type="number" tick={{ fill: C.muted, fontSize: 11 }} axisLine={false} tickLine={false}
                     tickFormatter={v => `$${v}`} />
                   <YAxis type="category" dataKey="name" tick={{ fill: C.muted, fontSize: 11 }} axisLine={false} tickLine={false} width={98} />
                   <Tooltip contentStyle={ttStyle} formatter={(v: any) => [`$${v}`, 'Monthly']} />
-                  <Bar dataKey="amount" radius={[0,6,6,0]}>
-                    {data.billsData.sort((a,b) => b.amount - a.amount).map((entry, i) => (
+                  <Bar dataKey="amount" radius={[0, 6, 6, 0]}>
+                    {data.billsData.sort((a, b) => b.amount - a.amount).map((entry, i) => (
                       <Cell key={i} fill={CAT_COLORS[entry.category] || C.muted} />
                     ))}
                     <LabelList dataKey="amount" position="right" formatter={(v: any) => `$${v}`}
@@ -657,7 +680,7 @@ export default function Insights() {
               <ResponsiveContainer width="100%" height={320}>
                 <PieChart>
                   <Pie data={Object.entries(data.billsByCategory).map(([cat, amt]) => ({
-                    name: cat.replace('_',' '), value: amt, color: CAT_COLORS[cat] || C.muted
+                    name: cat.replace('_', ' '), value: amt, color: CAT_COLORS[cat] || C.muted
                   }))} cx="50%" cy="50%" innerRadius={65} outerRadius={110}
                     dataKey="value" nameKey="name" paddingAngle={3}>
                     {Object.entries(data.billsByCategory).map(([cat], i) => (
@@ -701,15 +724,15 @@ export default function Insights() {
             <Card>
               <CardTitle icon={Repeat} title="Monthly Subscription Costs" color={C.warning} />
               <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={[...data.subsData].sort((a,b) => b.amount - a.amount)}
+                <BarChart data={[...data.subsData].sort((a, b) => b.amount - a.amount)}
                   margin={{ top: 10, right: 20, bottom: 0, left: 10 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
                   <XAxis dataKey="name" tick={{ fill: C.muted, fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: C.muted, fontSize: 11 }} axisLine={false} tickLine={false}
                     tickFormatter={v => `$${v}`} />
                   <Tooltip contentStyle={ttStyle} formatter={(v: any) => [`$${v}`, 'Monthly']} />
-                  <Bar dataKey="amount" radius={[6,6,0,0]}>
-                    {data.subsData.sort((a,b) => b.amount - a.amount).map((entry, i) => (
+                  <Bar dataKey="amount" radius={[6, 6, 0, 0]}>
+                    {data.subsData.sort((a, b) => b.amount - a.amount).map((entry, i) => (
                       <Cell key={i} fill={CAT_COLORS[entry.category] || C.muted} />
                     ))}
                     <LabelList dataKey="amount" position="top" formatter={(v: any) => `$${v}`}
@@ -722,7 +745,7 @@ export default function Insights() {
             <Card>
               <CardTitle icon={TrendingUp} title="Monthly vs Annual Cost" color={C.teal} />
               <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={data.subsData.sort((a,b) => b.annual - a.annual)}
+                <BarChart data={data.subsData.sort((a, b) => b.annual - a.annual)}
                   margin={{ top: 10, right: 20, bottom: 0, left: 10 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
                   <XAxis dataKey="name" tick={{ fill: C.muted, fontSize: 11 }} axisLine={false} tickLine={false} />
@@ -730,8 +753,8 @@ export default function Insights() {
                     tickFormatter={v => `$${v}`} />
                   <Tooltip contentStyle={ttStyle} formatter={(v: any) => [`$${v.toFixed(2)}`, '']} />
                   <Legend wrapperStyle={{ fontSize: 11, color: C.muted }} />
-                  <Bar dataKey="amount" name="Monthly" fill={C.warning} radius={[4,4,0,0]} />
-                  <Bar dataKey="annual" name="Annual" fill={C.teal} radius={[4,4,0,0]} />
+                  <Bar dataKey="amount" name="Monthly" fill={C.warning} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="annual" name="Annual" fill={C.teal} radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </Card>
@@ -758,7 +781,7 @@ export default function Insights() {
               <span className="text-sm font-semibold">Total</span>
               <div className="text-right">
                 <span className="font-black" style={{ color: C.warning }}>${data.totalSubscriptions.toFixed(2)}/mo</span>
-                <span className="text-xs ml-2" style={{ color: C.muted }}>(${(data.totalSubscriptions*12).toFixed(0)}/yr)</span>
+                <span className="text-xs ml-2" style={{ color: C.muted }}>(${(data.totalSubscriptions * 12).toFixed(0)}/yr)</span>
               </div>
             </div>
           </Card>
@@ -784,7 +807,7 @@ export default function Insights() {
                   <Tooltip contentStyle={ttStyle} />
                   <Bar dataKey="safe" name="Safe" stackId="a" fill={C.safe} />
                   <Bar dataKey="risky" name="Risky" stackId="a" fill={C.warning} />
-                  <Bar dataKey="not_recommended" name="Not Rec." stackId="a" fill={C.danger} radius={[4,4,0,0]} />
+                  <Bar dataKey="not_recommended" name="Not Rec." stackId="a" fill={C.danger} radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </Card>
@@ -821,7 +844,7 @@ export default function Insights() {
             <Card>
               <CardTitle icon={PieIcon} title="Checks by Purchase Category" color={C.purple} />
               <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={data.categorySpend.sort((a,b) => b.total - a.total)}
+                <BarChart data={data.categorySpend.sort((a, b) => b.total - a.total)}
                   margin={{ top: 10, right: 20, bottom: 0, left: 10 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
                   <XAxis dataKey="category" tick={{ fill: C.muted, fontSize: 11 }} axisLine={false} tickLine={false} />
@@ -830,7 +853,7 @@ export default function Insights() {
                   <Legend wrapperStyle={{ fontSize: 11, color: C.muted }} />
                   <Bar dataKey="safe" name="Safe" stackId="a" fill={C.safe} />
                   <Bar dataKey="risky" name="Risky" stackId="a" fill={C.warning} />
-                  <Bar dataKey="not_recommended" name="Not Rec." stackId="a" fill={C.danger} radius={[4,4,0,0]} />
+                  <Bar dataKey="not_recommended" name="Not Rec." stackId="a" fill={C.danger} radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </Card>
@@ -852,7 +875,7 @@ export default function Insights() {
                 <Legend wrapperStyle={{ fontSize: 12, color: C.muted }} />
                 <Bar dataKey="safe" name="Safe" stackId="a" fill={C.safe} />
                 <Bar dataKey="risky" name="Risky" stackId="a" fill={C.warning} />
-                <Bar dataKey="not_recommended" name="Not Rec." stackId="a" fill={C.danger} radius={[4,4,0,0]} />
+                <Bar dataKey="not_recommended" name="Not Rec." stackId="a" fill={C.danger} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </Card>
@@ -903,7 +926,7 @@ export default function Insights() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b" style={{ borderColor: C.border }}>
-                    {['Month','Checks','Safe','Risky','Not Rec.','Avg Score','Total Spend'].map(h => (
+                    {['Month', 'Checks', 'Safe', 'Risky', 'Not Rec.', 'Avg Score', 'Total Spend'].map(h => (
                       <th key={h} className="text-left py-2 px-3 text-xs font-semibold uppercase tracking-wider"
                         style={{ color: C.muted }}>{h}</th>
                     ))}
