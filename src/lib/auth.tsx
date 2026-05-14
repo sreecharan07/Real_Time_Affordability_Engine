@@ -22,21 +22,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    // Get initial session with timeout failsafe
+    const authTimeout = setTimeout(() => {
+      if (loading) {
+        console.warn('Auth initialization timed out. Proceeding to unauthenticated state.');
+        setLoading(false);
+      }
+    }, 5000);
+
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+        clearTimeout(authTimeout);
+      })
+      .catch(err => {
+        console.error('Auth session fetch failed:', err);
+        setLoading(false);
+        clearTimeout(authTimeout);
+      });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      clearTimeout(authTimeout);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(authTimeout);
+    };
   }, []);
 
   const signOut = async () => {
