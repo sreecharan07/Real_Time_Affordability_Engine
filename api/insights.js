@@ -8,8 +8,8 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(204).end();
 
   try {
-      await requireAuth(req, res, async () => {
-            const userId = req.user.id;
+    await requireAuth(req, res, async () => {
+      const userId = req.user.id;
       const [profileRes, billsRes, subsRes, checksRes] = await Promise.all([
         supabase.from('financial_profiles').select('*').eq('user_id', userId).order('id', { ascending: false }).limit(1).single(),
         supabase.from('bills').select('*').eq('user_id', userId),
@@ -24,11 +24,12 @@ export default async function handler(req, res) {
 
       if (!profile) return res.status(200).json({ empty: true });
 
-      const totalFixedExpenses = bills.reduce((s, b) => s + parseFloat(b.amount), 0);
-      const totalSubscriptions = subscriptions.reduce((s, sub) => s + parseFloat(sub.amount), 0);
+      const totalFixedExpenses = bills.reduce((s, b) => s + parseFloat(b.amount || 0), 0);
+      const totalSubscriptions = subscriptions.reduce((s, sub) => s + parseFloat(sub.amount || 0), 0);
       const totalObligations = totalFixedExpenses + totalSubscriptions + parseFloat(profile.savings_goal || 0);
-      const freeCashFlow = parseFloat(profile.monthly_income) - totalObligations;
-      const spendingRatio = totalObligations / parseFloat(profile.monthly_income);
+      const monthlyIncome = parseFloat(profile.monthly_income || 0);
+      const freeCashFlow = monthlyIncome - totalObligations;
+      const spendingRatio = monthlyIncome > 0 ? totalObligations / monthlyIncome : 0;
 
       let spendingRiskLevel;
       if (spendingRatio < 0.5) spendingRiskLevel = 'LOW';
@@ -36,7 +37,7 @@ export default async function handler(req, res) {
       else spendingRiskLevel = 'HIGH';
 
       // Monthly trend: last 6 months simulated
-      const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const today = new Date();
       const trend = [];
       for (let i = 5; i >= 0; i--) {
@@ -50,7 +51,7 @@ export default async function handler(req, res) {
         const notRecCount = monthChecks.filter(c => c.decision === 'NOT_RECOMMENDED').length;
         const totalSpend = monthChecks.reduce((s, c) => s + parseFloat(c.purchase_amount || 0), 0);
         const avg_score = monthChecks.length ? Math.round(monthChecks.reduce((s, c) => s + (c.score || 0), 0) / monthChecks.length) : 0;
-        
+
         trend.push({
           month: monthNames[d.getMonth()],
           safe: safeCount,
@@ -96,7 +97,7 @@ export default async function handler(req, res) {
         const cat = c.category || 'other';
         if (!categorySpendMap[cat]) categorySpendMap[cat] = { category: cat, total: 0, amount: 0, safe: 0, risky: 0, not_recommended: 0 };
         categorySpendMap[cat].total++;
-        categorySpendMap[cat].amount += parseFloat(c.purchase_amount);
+        categorySpendMap[cat].amount += parseFloat(c.purchase_amount || 0);
         if (c.decision === 'SAFE') categorySpendMap[cat].safe++;
         else if (c.decision === 'RISKY') categorySpendMap[cat].risky++;
         else categorySpendMap[cat].not_recommended++;
@@ -104,7 +105,7 @@ export default async function handler(req, res) {
       const categorySpend = Object.values(categorySpendMap);
 
       const checksScatter = checks.map(c => ({
-        amount: parseFloat(c.purchase_amount),
+        amount: parseFloat(c.purchase_amount || 0),
         score: c.score,
         decision: c.decision,
         name: c.merchant_name || 'Purchase'
@@ -115,12 +116,12 @@ export default async function handler(req, res) {
       let currentSimBalance = parseFloat(profile.current_balance);
       const currentDay = today.getDate();
       const paydayDate = parseInt(profile.payday_date || 1);
-      
+
       for (let i = 0; i < 30; i++) {
         const simDate = new Date(today);
         simDate.setDate(today.getDate() + i);
         const dayOfMonth = simDate.getDate();
-        
+
         let income = 0;
         let expenses = 0;
         let events = [];
@@ -156,8 +157,8 @@ export default async function handler(req, res) {
         });
       }
 
-      const avgScore = checks.length ? Math.round(checks.reduce((s,c) => s + c.score, 0) / checks.length) : 0;
-      const avgPurchaseAmount = checks.length ? checks.reduce((s,c) => s + parseFloat(c.purchase_amount), 0) / checks.length : 0;
+      const avgScore = checks.length ? Math.round(checks.reduce((s, c) => s + (c.score || 0), 0) / checks.length) : 0;
+      const avgPurchaseAmount = checks.length ? checks.reduce((s, c) => s + parseFloat(c.purchase_amount || 0), 0) / checks.length : 0;
 
       return res.status(200).json({
         totalFixedExpenses: parseFloat(totalFixedExpenses.toFixed(2)),
@@ -185,9 +186,10 @@ export default async function handler(req, res) {
         avgScore,
         avgPurchaseAmount: parseFloat(avgPurchaseAmount.toFixed(2))
       });
+    });
   } catch (err) {
     console.error('Insights API error:', err);
     res.status(500).json({ error: err.message });
   }
-});
+}
 

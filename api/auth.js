@@ -1,5 +1,5 @@
 import supabase from './_supabase.js';
-import jwt from 'jsonwebtoken';
+
 
 // Middleware to verify Supabase JWT token
 export async function requireAuth(req, res, next) {
@@ -10,12 +10,12 @@ export async function requireAuth(req, res, next) {
   }
   try {
     // Supabase issues JWTs signed with its secret; we can verify via supabase.auth.api.getUser
-    const { data: user, error } = await supabase.auth.api.getUser(token);
+    const { data: { user }, error } = await supabase.auth.getUser(token);
     if (error || !user) {
       return res.status(401).json({ error: 'Invalid token' });
     }
     req.user = user; // attach user info
-    next();
+    await next();
   } catch (e) {
     console.error('Auth verification error', e);
     return res.status(500).json({ error: 'Auth verification failed' });

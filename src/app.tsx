@@ -3,7 +3,7 @@ import { AuthProvider } from './lib/auth';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import Landing from './pages/Landing';
-import AuthPage from './pages/AuthPage.tsx';
+import AuthPage from './pages/AuthPage';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import AffordabilityChecker from './pages/AffordabilityChecker';
