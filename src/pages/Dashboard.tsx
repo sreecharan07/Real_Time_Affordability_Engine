@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Wallet, TrendingUp, AlertCircle, Calendar, Target, Shield, ArrowRight, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useAuth } from '../lib/auth';
 
 interface Profile {
   monthly_income: number;
@@ -34,18 +35,25 @@ export default function Dashboard() {
   const [subs, setSubs] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { session } = useAuth();
 
   useEffect(() => {
+    if (!session) return;
+
+    const headers = {
+      'Authorization': `Bearer ${session.access_token}`
+    };
+
     Promise.all([
-      fetch('/api/profile').then(r => r.json()),
-      fetch('/api/bills').then(r => r.json()),
-      fetch('/api/subscriptions').then(r => r.json()),
+      fetch('/api/profile', { headers }).then(r => r.json()),
+      fetch('/api/bills', { headers }).then(r => r.json()),
+      fetch('/api/subscriptions', { headers }).then(r => r.json()),
     ]).then(([p, b, s]) => {
       setProfile(p);
       setBills(Array.isArray(b) ? b : []);
       setSubs(Array.isArray(s) ? s : []);
     }).finally(() => setLoading(false));
-  }, []);
+  }, [session]);
 
   if (loading) return (
     <div className="flex items-center justify-center h-96">

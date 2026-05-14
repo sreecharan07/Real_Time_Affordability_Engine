@@ -10,6 +10,7 @@ import {
   ShieldCheck, XCircle, Calendar, CreditCard, Repeat
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useAuth } from '../lib/auth';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface InsightsData {
@@ -318,11 +319,16 @@ export default function Insights() {
   const [error, setError] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [activeSection, setActiveSection] = useState('overview');
+  const { session } = useAuth();
 
   const fetchData = () => {
     setLoading(true);
     setError(null);
-    fetch('/api/insights')
+    fetch('/api/insights', {
+      headers: {
+        'Authorization': `Bearer ${session?.access_token}`
+      }
+    })
       .then(r => r.json())
       .then(res => {
         if (res.error) {
@@ -334,7 +340,11 @@ export default function Insights() {
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
   };
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    if (session) {
+      fetchData();
+    }
+  }, [session]);
 
   const handleDownload = () => {
     if (!data) return;

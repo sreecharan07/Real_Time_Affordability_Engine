@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Zap, ShieldCheck, AlertTriangle, XCircle, DollarSign, Calendar, Tag, Store, ChevronRight, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../lib/auth';
 
 interface CheckResult {
   decision: 'SAFE' | 'RISKY' | 'NOT_RECOMMENDED';
@@ -51,6 +52,7 @@ export default function AffordabilityChecker() {
   const [result, setResult] = useState<CheckResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const { session } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,7 +65,10 @@ export default function AffordabilityChecker() {
     try {
       const res = await fetch('/api/affordability', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
         body: JSON.stringify({ ...form, purchase_amount: parseFloat(form.purchase_amount) }),
       });
       const data = await res.json();
