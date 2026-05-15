@@ -36,9 +36,15 @@ export default function AuthPage() {
     setLoading(true);
     try {
       if (mode === 'signup') {
-        const { error } = await supabase.auth.signUp({ email, password });
+        const { error } = await supabase.auth.signUp({ 
+          email, 
+          password,
+          options: {
+            emailRedirectTo: window.location.origin
+          }
+        });
         if (error) throw error;
-        setSuccess('Account created! Check your email to confirm, or sign in now if confirmation is disabled.');
+        setSuccess('Account created! Check your email to confirm your account.');
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
