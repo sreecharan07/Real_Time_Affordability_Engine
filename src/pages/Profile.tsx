@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Plus, Trash2, Save, Wallet, CreditCard, Repeat, CheckCircle } from 'lucide-react';
+import { useAuth } from '../lib/auth';
 
 interface Profile { monthly_income: number; current_balance: number; savings_goal: number; safety_buffer: number; payday_date: number; }
 interface Bill { id?: number; name: string; amount: string; due_day: string; category: string; is_recurring: boolean; }
@@ -15,22 +16,40 @@ export default function Profile() {
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
+  const { session } = useAuth();
 
-  useEffect(() => {
+  const fetchData = () => {
+    if (!session) return;
+    const headers = { 'Authorization': `Bearer ${session.access_token}` };
+    
     Promise.all([
-      fetch('/api/profile').then(r => r.json()),
-      fetch('/api/bills').then(r => r.json()),
-      fetch('/api/subscriptions').then(r => r.json()),
+      fetch('/api/profile', { headers }).then(r => r.json()),
+      fetch('/api/bills', { headers }).then(r => r.json()),
+      fetch('/api/subscriptions', { headers }).then(r => r.json()),
     ]).then(([p, b, s]) => {
       if (p) setProfile(p);
       setBills(Array.isArray(b) ? b.map((x: any) => ({ ...x, amount: String(x.amount), due_day: String(x.due_day) })) : []);
       setSubs(Array.isArray(s) ? s.map((x: any) => ({ ...x, amount: String(x.amount) })) : []);
     }).finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => {
+    if (session) {
+      fetchData();
+    }
+  }, [session]);
 
   const saveProfile = async () => {
+    if (!session) return;
     setErrorMsg('');
-    const res = await fetch('/api/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(profile) });
+    const res = await fetch('/api/profile', { 
+      method: 'POST', 
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      }, 
+      body: JSON.stringify(profile) 
+    });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       setErrorMsg(data.error || 'Failed to save profile. Is RLS enabled in Supabase?');
@@ -42,38 +61,66 @@ export default function Profile() {
 
   const addBill = () => setBills(b => [...b, { name: '', amount: '', due_day: '', category: 'other', is_recurring: true }]);
   const removeBill = async (idx: number, id?: number) => {
-    if (id) await fetch('/api/bills', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+    if (!session) return;
+    if (id) await fetch('/api/bills', { 
+      method: 'DELETE', 
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      }, 
+      body: JSON.stringify({ id }) 
+    });
     setBills(b => b.filter((_, i) => i !== idx));
   };
   const saveBill = async (bill: Bill) => {
-    if (!bill.name || !bill.amount || !bill.due_day) return;
+    if (!session || !bill.name || !bill.amount || !bill.due_day) return;
     setErrorMsg('');
-    const res = await fetch('/api/bills', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: bill.name, amount: parseFloat(bill.amount), due_day: parseInt(bill.due_day), category: bill.category, is_recurring: bill.is_recurring }) });
+    const res = await fetch('/api/bills', { 
+      method: 'POST', 
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      }, 
+      body: JSON.stringify({ name: bill.name, amount: parseFloat(bill.amount), due_day: parseInt(bill.due_day), category: bill.category, is_recurring: bill.is_recurring }) 
+    });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       setErrorMsg(data.error || 'Failed to save bill.');
       return;
     }
-    const b = await fetch('/api/bills').then(r => r.json());
-    setBills(Array.isArray(b) ? b.map((x: any) => ({ ...x, amount: String(x.amount), due_day: String(x.due_day) })) : []);
+    fetchData();
   };
 
   const addSub = () => setSubs(s => [...s, { name: '', amount: '', billing_cycle: 'monthly', category: 'other' }]);
   const removeSub = async (idx: number, id?: number) => {
-    if (id) await fetch('/api/subscriptions', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+    if (!session) return;
+    if (id) await fetch('/api/subscriptions', { 
+      method: 'DELETE', 
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      }, 
+      body: JSON.stringify({ id }) 
+    });
     setSubs(s => s.filter((_, i) => i !== idx));
   };
   const saveSub = async (sub: Subscription) => {
-    if (!sub.name || !sub.amount) return;
+    if (!session || !sub.name || !sub.amount) return;
     setErrorMsg('');
-    const res = await fetch('/api/subscriptions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: sub.name, amount: parseFloat(sub.amount), billing_cycle: sub.billing_cycle, category: sub.category }) });
+    const res = await fetch('/api/subscriptions', { 
+      method: 'POST', 
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      }, 
+      body: JSON.stringify({ name: sub.name, amount: parseFloat(sub.amount), billing_cycle: sub.billing_cycle, category: sub.category }) 
+    });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       setErrorMsg(data.error || 'Failed to save subscription.');
       return;
     }
-    const s = await fetch('/api/subscriptions').then(r => r.json());
-    setSubs(Array.isArray(s) ? s.map((x: any) => ({ ...x, amount: String(x.amount) })) : []);
+    fetchData();
   };
 
   if (loading) return <div className="flex items-center justify-center h-96"><div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: 'var(--accent)', borderTopColor: 'transparent' }} /></div>;

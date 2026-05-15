@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ShieldCheck, AlertTriangle, XCircle, History as HistoryIcon, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useAuth } from '../lib/auth';
 
 interface Check {
   id: number;
@@ -26,13 +27,26 @@ const decisionConfig = {
 export default function History() {
   const [checks, setChecks] = useState<Check[]>([]);
   const [loading, setLoading] = useState(true);
+  const { session } = useAuth();
 
   const fetchChecks = () => {
+    if (!session) return;
     setLoading(true);
-    fetch('/api/affordability').then(r => r.json()).then(d => setChecks(Array.isArray(d) ? d : [])).finally(() => setLoading(false));
+    fetch('/api/affordability', {
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`
+      }
+    })
+      .then(r => r.json())
+      .then(d => setChecks(Array.isArray(d) ? d : []))
+      .finally(() => setLoading(false));
   };
 
-  useEffect(() => { fetchChecks(); }, []);
+  useEffect(() => {
+    if (session) {
+      fetchChecks();
+    }
+  }, [session]);
 
   if (loading) return <div className="flex items-center justify-center h-96"><div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: 'var(--accent)', borderTopColor: 'transparent' }} /></div>;
 

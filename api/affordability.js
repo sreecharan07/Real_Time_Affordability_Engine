@@ -1,4 +1,6 @@
 import supabase from './_supabase.js';
+import { requireAuth } from './auth.js';
+
 function computeAffordability({ profile, bills, subscriptions, purchaseAmount }) {
   const today = new Date();
   const currentDay = today.getDate();
@@ -92,6 +94,7 @@ function computeAffordability({ profile, bills, subscriptions, purchaseAmount })
   }
 
   return {
+    startingBalance: parseFloat(currentBalance.toFixed(2)),
     decision,
     score,
     projectedBalance: parseFloat(projectedBalance.toFixed(2)),
@@ -114,54 +117,61 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(204).end();
 
   try {
-    if (req.method === 'POST') {
-      const { purchase_amount, category, merchant_name, purchase_date } = req.body;
+    await requireAuth(req, res, async () => {
+      const userId = req.user.id;
 
-      const [profileRes, billsRes, subsRes] = await Promise.all([
-        supabase.from('financial_profiles').select('*').order('id', { ascending: false }).limit(1).single(),
-        supabase.from('bills').select('*'),
-        supabase.from('subscriptions').select('*')
-      ]);
+      if (req.method === 'POST') {
+        const { purchase_amount, category, merchant_name, purchase_date } = req.body;
 
-      if (profileRes.error) throw new Error('No financial profile found. Please set up your profile first.');
+        const [profileRes, billsRes, subsRes] = await Promise.all([
+          supabase.from('financial_profiles').select('*').eq('user_id', userId).single(),
+          supabase.from('bills').select('*').eq('user_id', userId),
+          supabase.from('subscriptions').select('*').eq('user_id', userId)
+        ]);
 
-      const result = computeAffordability({
-        profile: profileRes.data,
-        bills: billsRes.data || [],
-        subscriptions: subsRes.data || [],
-        purchaseAmount: parseFloat(purchase_amount)
-      });
+        if (profileRes.error) throw new Error('No financial profile found. Please set up your profile first.');
 
-      // Save the check
-      await supabase.from('affordability_checks').insert({
-        purchase_amount: parseFloat(purchase_amount),
-        category,
-        merchant_name,
-        purchase_date,
-        decision: result.decision,
-        score: result.score,
-        projected_balance: result.projectedBalance,
-        disposable_balance: result.disposableBalance,
-        reasons: JSON.stringify(result.reasons),
-        recommendation: result.recommendation
-      });
+        const result = computeAffordability({
+          profile: profileRes.data,
+          bills: billsRes.data || [],
+          subscriptions: subsRes.data || [],
+          purchaseAmount: parseFloat(purchase_amount)
+        });
 
-      return res.status(200).json(result);
-    }
+        // Save the check
+        await supabase.from('affordability_checks').insert({
+          user_id: userId,
+          purchase_amount: parseFloat(purchase_amount),
+          category,
+          merchant_name,
+          purchase_date,
+          decision: result.decision,
+          score: result.score,
+          projected_balance: result.projectedBalance,
+          disposable_balance: result.disposableBalance,
+          reasons: result.reasons, // Pass array directly for JSONB
+          recommendation: result.recommendation
+        });
 
-    if (req.method === 'GET') {
-      const { data, error } = await supabase
-        .from('affordability_checks')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(20);
-      if (error) throw error;
-      return res.status(200).json(data);
-    }
+        return res.status(200).json(result);
+      }
 
-    res.status(405).json({ error: 'Method not allowed' });
+      if (req.method === 'GET') {
+        const { data, error } = await supabase
+          .from('affordability_checks')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(20);
+        if (error) throw error;
+        return res.status(200).json(data);
+      }
+
+      res.status(405).json({ error: 'Method not allowed' });
+    });
   } catch (err) {
     console.error('Affordability API error:', err);
     res.status(500).json({ error: err.message });
   }
+}
 }

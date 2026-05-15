@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../lib/auth';
 
 interface CheckResult {
+  startingBalance: number;
   decision: 'SAFE' | 'RISKY' | 'NOT_RECOMMENDED';
   score: number;
   projectedBalance: number;
@@ -65,7 +66,7 @@ export default function AffordabilityChecker() {
     try {
       const res = await fetch('/api/affordability', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session?.access_token}`
         },
@@ -192,11 +193,10 @@ export default function AffordabilityChecker() {
                 <h3 className="font-bold text-sm mb-3">Balance Breakdown</h3>
                 <div className="space-y-2">
                   {[
-                    { label: 'Current Balance', value: `$${parseFloat(form.purchase_amount || '0').toFixed(2)} → $${result.balanceAfterPurchase.toFixed(2)}` },
+                    { label: 'Initial Balance', value: `$${result.startingBalance.toFixed(2)} → $${result.balanceAfterPurchase.toFixed(2)}` },
                     { label: 'Disposable Balance', value: `$${result.disposableBalance.toFixed(2)}` },
-                    { label: 'Projected Balance', value: `$${result.projectedBalance.toFixed(2)}`, highlight: result.projectedBalance < 0 },
+                    { label: 'Projected Remaining', value: `$${result.projectedBalance.toFixed(2)}`, highlight: result.projectedBalance < 0 },
                     { label: 'Upcoming Bills', value: `$${result.upcomingBillsTotal.toFixed(2)}` },
-                    { label: 'Days Until Payday', value: `${result.daysUntilPayday} days` },
                   ].map(({ label, value, highlight }) => (
                     <div key={label} className="flex justify-between text-sm">
                       <span style={{ color: 'var(--text-muted)' }}>{label}</span>

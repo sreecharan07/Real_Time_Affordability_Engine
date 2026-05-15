@@ -8,9 +8,11 @@ import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import AffordabilityChecker from './pages/AffordabilityChecker';
 import Insights from './pages/Insights';
+import Financing from './pages/Financing';
 import History from './pages/History';
 import NotFound from './pages/NotFound';
 
+// Main App Component with Authentication and Routing
 export default function App() {
   return (
     <AuthProvider>
@@ -27,6 +29,7 @@ export default function App() {
               <Route path="/profile" element={<Profile />} />
               <Route path="/check" element={<AffordabilityChecker />} />
               <Route path="/insights" element={<Insights />} />
+              <Route path="/financing" element={<Financing />} />
               <Route path="/history" element={<History />} />
             </Route>
           </Route>

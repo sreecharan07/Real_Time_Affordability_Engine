@@ -7,6 +7,7 @@ const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/check', icon: CheckCircle, label: 'Check' },
   { to: '/insights', icon: BarChart3, label: 'Insights' },
+  { to: '/financing', icon: Zap, label: 'Financing' },
   { to: '/profile', icon: Wallet, label: 'Profile' },
   { to: '/history', icon: History, label: 'History' },
 ];
