@@ -32,7 +32,7 @@ export default async function handler(req, res) {
           .insert({ user_id: userId, name, amount, due_day, category, is_recurring })
           .select()
           .single();
-        
+
         if (error) {
           console.error('Supabase Bill Insert Error:', error);
           throw error;
@@ -58,4 +58,4 @@ export default async function handler(req, res) {
     res.status(500).json({ error: err.message });
   }
 }
-}
+
