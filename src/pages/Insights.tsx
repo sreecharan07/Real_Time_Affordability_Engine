@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../lib/auth';
+import { formatCurrency } from '../lib/currency';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface InsightsData {
@@ -24,8 +25,6 @@ interface InsightsData {
   waterfallData: any[]; checksScatter: any[];
   totalChecks: number; avgScore: number; avgPurchaseAmount: number; empty?: boolean;
 }
-
-
 
 // ─── Theme ───────────────────────────────────────────────────────────────────
 const C = {
@@ -66,7 +65,8 @@ function CardTitle({ icon: Icon, title, color = C.accent }: any) {
 }
 
 // ─── KPI card ─────────────────────────────────────────────────────────────────
-function KPI({ label, value, sub, color, icon: Icon }: any) {
+function KPI({ label, value, sub, color, icon: Icon, currency }: any) {
+  const displayValue = typeof value === 'number' ? formatCurrency(value, currency) : value;
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
       className="rounded-2xl p-5 border" style={{ background: C.surface, borderColor: C.border }}>
@@ -76,21 +76,21 @@ function KPI({ label, value, sub, color, icon: Icon }: any) {
           <Icon className="w-4 h-4" style={{ color }} />
         </div>
       </div>
-      <p className="text-2xl font-black mb-0.5">{value}</p>
+      <p className="text-2xl font-black mb-0.5">{displayValue}</p>
       {sub && <p className="text-xs" style={{ color: C.muted }}>{sub}</p>}
     </motion.div>
   );
 }
 
 // ─── Custom Tooltip ───────────────────────────────────────────────────────────
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label, currency }: any) => {
   if (!active || !payload?.length) return null;
   return (
     <div style={{ ...ttStyle, padding: '10px 14px' }}>
       <p className="font-bold text-xs mb-1">{label}</p>
       {payload.map((p: any, i: number) => (
         <p key={i} className="text-xs" style={{ color: p.color }}>
-          {p.name}: {typeof p.value === 'number' && p.name?.includes('$') ? `$${p.value.toLocaleString()}` : p.value}
+          {p.name}: {typeof p.value === 'number' ? formatCurrency(p.value, currency) : p.value}
         </p>
       ))}
     </div>
@@ -317,6 +317,7 @@ export default function Insights() {
   const [data, setData] = useState<InsightsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currency, setCurrency] = useState('USD');
   const [downloading, setDownloading] = useState(false);
   const [activeSection, setActiveSection] = useState('overview');
   const { session } = useAuth();
@@ -324,20 +325,20 @@ export default function Insights() {
   const fetchData = () => {
     setLoading(true);
     setError(null);
-    fetch('/api/insights', {
-      headers: {
-        'Authorization': `Bearer ${session?.access_token}`
+
+    const headers = { 'Authorization': `Bearer ${session?.access_token}` };
+    
+    Promise.all([
+      fetch('/api/insights', { headers }).then(r => r.json()),
+      fetch('/api/profile', { headers }).then(r => r.json())
+    ]).then(([d, p]) => {
+      if (d.error) {
+        setError(d.error);
+      } else {
+        setData(d);
+        if (p && p.currency) setCurrency(p.currency);
       }
-    })
-      .then(r => r.json())
-      .then(res => {
-        if (res.error) {
-          setError(res.error);
-        } else {
-          setData(res);
-        }
-      })
-      .catch(err => setError(err.message))
+    }).catch(err => setError(err.message))
       .finally(() => setLoading(false));
   };
   useEffect(() => {
@@ -452,14 +453,14 @@ export default function Insights() {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
           {/* KPI row */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <KPI label="Monthly Income" value={`$${data.monthlyIncome.toLocaleString()}`} sub="CAD" color={C.accent} icon={TrendingUp} />
-            <KPI label="Current Balance" value={`$${data.currentBalance.toLocaleString()}`} sub="Available" color={C.safe} icon={DollarSign} />
-            <KPI label="Free Cash Flow" value={`$${data.freeCashFlow.toLocaleString()}`} sub="After obligations" color={data.freeCashFlow >= 0 ? C.safe : C.danger} icon={data.freeCashFlow >= 0 ? TrendingUp : TrendingDown} />
+            <KPI label="Monthly Income" value={data.monthlyIncome} currency={currency} sub={currency} color={C.accent} icon={TrendingUp} />
+            <KPI label="Current Balance" value={data.currentBalance} currency={currency} sub="Available" color={C.safe} icon={DollarSign} />
+            <KPI label="Free Cash Flow" value={data.freeCashFlow} currency={currency} sub="After obligations" color={data.freeCashFlow >= 0 ? C.safe : C.danger} icon={data.freeCashFlow >= 0 ? TrendingUp : TrendingDown} />
             <KPI label="Spending Ratio" value={`${data.spendingRatio}%`} sub={risk.label} color={risk.color} icon={PieIcon} />
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <KPI label="Total Obligations" value={`$${data.totalObligations.toLocaleString()}`} sub="Bills+subs+savings" color={C.danger} icon={AlertTriangle} />
-            <KPI label="Safety Buffer" value={`$${data.safetyBuffer.toLocaleString()}`} sub="Protected" color={C.purple} icon={Shield} />
+            <KPI label="Total Obligations" value={data.totalObligations} currency={currency} sub="Bills+subs+savings" color={C.danger} icon={AlertTriangle} />
+            <KPI label="Safety Buffer" value={data.safetyBuffer} currency={currency} sub="Protected" color={C.purple} icon={Shield} />
             <KPI label="Total Checks" value={`${data.totalChecks}`} sub="Affordability runs" color={C.accent} icon={Zap} />
             <KPI label="Avg Score" value={`${data.avgScore}/100`} sub="Affordability score" color={data.avgScore >= 70 ? C.safe : data.avgScore >= 40 ? C.warning : C.danger} icon={Target} />
           </div>
@@ -473,8 +474,8 @@ export default function Insights() {
                   <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
                   <XAxis dataKey="name" tick={{ fill: C.muted, fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: C.muted, fontSize: 11 }} axisLine={false} tickLine={false}
-                    tickFormatter={v => `$${Math.abs(v / 1000).toFixed(0)}k`} />
-                  <Tooltip contentStyle={ttStyle} formatter={(v: any) => [`$${Math.abs(v).toLocaleString()}`, '']} />
+                    tickFormatter={v => formatCurrency(v, currency)} />
+                  <Tooltip content={<CustomTooltip currency={currency} />} />
                   <Bar dataKey="value" radius={[6, 6, 0, 0]}>
                     {data.waterfallData.map((entry, i) => (
                       <Cell key={i} fill={entry.type === 'income' ? C.accent : entry.type === 'result' ? (entry.value >= 0 ? C.safe : C.danger) : C.danger} />

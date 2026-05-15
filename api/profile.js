@@ -27,7 +27,7 @@ export default async function handler(req, res) {
       }
 
       if (req.method === 'POST') {
-        const { monthly_income, current_balance, savings_goal, safety_buffer, payday_date } = req.body;
+        const { monthly_income, current_balance, savings_goal, safety_buffer, payday_date, currency } = req.body;
 
         const { data, error } = await supabase
           .from('financial_profiles')
@@ -37,7 +37,8 @@ export default async function handler(req, res) {
             current_balance,
             savings_goal,
             safety_buffer,
-            payday_date
+            payday_date,
+            currency: currency || 'USD'
           }, { onConflict: 'user_id' })
           .select()
           .single();

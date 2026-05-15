@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ShieldCheck, AlertTriangle, XCircle, History as HistoryIcon, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../lib/auth';
+import { formatCurrency } from '../lib/currency';
 
 interface Check {
   id: number;
@@ -27,11 +28,18 @@ const decisionConfig = {
 export default function History() {
   const [checks, setChecks] = useState<Check[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currency, setCurrency] = useState('USD');
   const { session } = useAuth();
 
   const fetchChecks = () => {
     if (!session) return;
     setLoading(true);
+    
+    // Fetch currency first
+    fetch('/api/profile', { headers: { 'Authorization': `Bearer ${session.access_token}` } })
+      .then(r => r.json())
+      .then(p => { if (p && p.currency) setCurrency(p.currency); });
+
     fetch('/api/affordability', {
       headers: {
         'Authorization': `Bearer ${session.access_token}`
@@ -91,7 +99,7 @@ export default function History() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-xl font-black">${parseFloat(check.purchase_amount as any).toFixed(2)}</p>
+                    <p className="text-xl font-black">{formatCurrency(check.purchase_amount, currency)}</p>
                     <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Score: {check.score}/100</p>
                   </div>
                 </div>

@@ -1,8 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Plus, Trash2, Save, Wallet, CreditCard, Repeat, CheckCircle } from 'lucide-react';
 import { useAuth } from '../lib/auth';
+import { SUPPORTED_CURRENCIES } from '../lib/currency';
 
-interface Profile { monthly_income: number; current_balance: number; savings_goal: number; safety_buffer: number; payday_date: number; }
+interface Profile {
+  monthly_income: number;
+  current_balance: number;
+  savings_goal: number;
+  safety_buffer: number;
+  payday_date: number;
+  currency: string;
+}
 interface Bill { id?: number; name: string; amount: string; due_day: string; category: string; is_recurring: boolean; }
 interface Subscription { id?: number; name: string; amount: string; billing_cycle: string; category: string; }
 
@@ -10,7 +18,14 @@ const BILL_CATEGORIES = ['rent', 'utilities', 'insurance', 'phone', 'internet', 
 const SUB_CATEGORIES = ['streaming', 'music', 'fitness', 'software', 'news', 'gaming', 'other'];
 
 export default function Profile() {
-  const [profile, setProfile] = useState<Profile>({ monthly_income: 3200, current_balance: 1850, savings_goal: 250, safety_buffer: 300, payday_date: 1 });
+  const [profile, setProfile] = useState<Profile>({
+    monthly_income: 3200,
+    current_balance: 1850,
+    savings_goal: 250,
+    safety_buffer: 300,
+    payday_date: 1,
+    currency: 'USD'
+  });
   const [bills, setBills] = useState<Bill[]>([]);
   const [subs, setSubs] = useState<Subscription[]>([]);
   const [saved, setSaved] = useState(false);
@@ -147,15 +162,27 @@ export default function Profile() {
           <h2 className="font-bold">Core Financials</h2>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Preferred Currency</label>
+            <select
+              value={profile.currency}
+              onChange={e => setProfile(p => ({ ...p, currency: e.target.value }))}
+              className={inputClass} style={inputStyle}
+            >
+              {SUPPORTED_CURRENCIES.map(curr => (
+                <option key={curr.code} value={curr.code}>{curr.flag} {curr.label}</option>
+              ))}
+            </select>
+          </div>
           {[
-            { label: 'Monthly Income (CAD)', key: 'monthly_income' },
-            { label: 'Current Balance (CAD)', key: 'current_balance' },
-            { label: 'Savings Goal (CAD/mo)', key: 'savings_goal' },
-            { label: 'Safety Buffer (CAD)', key: 'safety_buffer' },
+            { label: 'Monthly Income', key: 'monthly_income' },
+            { label: 'Current Balance', key: 'current_balance' },
+            { label: 'Savings Goal (Monthly)', key: 'savings_goal' },
+            { label: 'Safety Buffer', key: 'safety_buffer' },
             { label: 'Payday (day of month)', key: 'payday_date' },
           ].map(({ label, key }) => (
             <div key={key}>
-              <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</label>
+              <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label} ({profile.currency})</label>
               <input
                 type="number" value={(profile as any)[key]}
                 onChange={e => setProfile(p => ({ ...p, [key]: parseFloat(e.target.value) || 0 }))}

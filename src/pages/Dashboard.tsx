@@ -4,12 +4,15 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../lib/auth';
 
+import { formatCurrency } from '../lib/currency';
+
 interface Profile {
   monthly_income: number;
   current_balance: number;
   savings_goal: number;
   safety_buffer: number;
   payday_date: number;
+  currency: string;
 }
 interface Bill { id: number; name: string; amount: number; due_day: number; category: string; }
 interface Subscription { id: number; name: string; amount: number; billing_cycle: string; }
@@ -98,11 +101,11 @@ export default function Dashboard() {
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard label="Monthly Income" value={`$${profile.monthly_income.toLocaleString()}`} icon={TrendingUp} color="var(--accent)" sub="CAD" />
-        <StatCard label="Current Balance" value={`$${profile.current_balance.toLocaleString()}`} icon={Wallet} color="var(--safe)" sub="Available" />
-        <StatCard label="Free Cash Flow" value={`$${freeCashFlow.toFixed(0)}`} icon={ArrowRight} color={freeCashFlow > 0 ? 'var(--safe)' : 'var(--danger)'} sub="After obligations" />
-        <StatCard label="Safety Buffer" value={`$${profile.safety_buffer}`} icon={Shield} color="var(--warning)" sub="Protected" />
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+        <StatCard label="Monthly Income" value={formatCurrency(profile.monthly_income, profile.currency)} icon={TrendingUp} color="#3b82f6" sub="Projected for this month" />
+        <StatCard label="Current Balance" value={formatCurrency(profile.current_balance, profile.currency)} icon={Wallet} color="#10b981" sub="Across all accounts" />
+        <StatCard label="Disposable Cash" value={formatCurrency(disposable, profile.currency)} icon={Shield} color="#8b5cf6" sub="After bills and safety buffer" />
+        <StatCard label="Savings Goal" value={formatCurrency(profile.savings_goal, profile.currency)} icon={Target} color="#ec4899" sub="Your monthly target" />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
@@ -119,7 +122,7 @@ export default function Dashboard() {
               <div key={label}>
                 <div className="flex justify-between text-sm mb-1">
                   <span style={{ color: 'var(--text-secondary)' }}>{label}</span>
-                  <span className="font-semibold">${parseFloat(amount as any).toFixed(0)}</span>
+                  <span className="font-semibold">{formatCurrency(parseFloat(amount as any), profile.currency)}</span>
                 </div>
                 <div className="h-2 rounded-full" style={{ background: 'var(--bg-base)' }}>
                   <div className="h-2 rounded-full transition-all" style={{ width: `${Math.min(pct, 100)}%`, background: color }} />
@@ -127,9 +130,15 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
-          <div className="mt-4 pt-4 border-t flex justify-between" style={{ borderColor: 'var(--border)' }}>
-            <span className="text-sm font-semibold">Total Obligations</span>
-            <span className="font-black">${totalObligations.toFixed(0)}</span>
+          <div className="grid sm:grid-cols-2 gap-4 mt-6">
+            <div className="p-4 rounded-xl border" style={{ background: 'var(--bg-base)', borderColor: 'var(--border)' }}>
+              <p className="text-xs font-bold text-slate-500 uppercase mb-1">Fixed Obligations</p>
+              <p className="text-xl font-black">{formatCurrency(totalBills + totalSubs, profile.currency)}</p>
+            </div>
+            <div className="p-4 rounded-xl border" style={{ background: 'var(--bg-base)', borderColor: 'var(--border)' }}>
+              <p className="text-xs font-bold text-slate-500 uppercase mb-1">Free Cash Flow</p>
+              <p className="text-xl font-black text-blue-400">{formatCurrency(freeCashFlow, profile.currency)}</p>
+            </div>
           </div>
         </div>
 
@@ -153,7 +162,10 @@ export default function Dashboard() {
                         {daysUntil === 0 ? 'Due today' : `${daysUntil}d away`}
                       </p>
                     </div>
-                    <span className="font-bold text-sm">${bill.amount}</span>
+                    <div className="text-right">
+                      <p className="font-bold text-sm">{formatCurrency(bill.amount, profile.currency)}</p>
+                      <p className="text-[10px] text-slate-500">Due on the {bill.due_day}th</p>
+                    </div>
                   </div>
                 );
               })}

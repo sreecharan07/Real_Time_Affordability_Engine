@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { 
-  PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid
+  PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend
 } from 'recharts';
 import { 
   Shield, Zap, Wallet, TrendingUp, AlertCircle, 
@@ -9,6 +8,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../lib/auth';
+import { formatCurrency } from '../lib/currency';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const RATIOS = {
@@ -34,6 +34,7 @@ interface FinancingData {
   flexTarget: number;
   primaryTarget: number;
   currentActualExpenses: number;
+  currency: string;
 }
 
 export default function Financing() {
@@ -45,6 +46,7 @@ export default function Financing() {
     const income = profile?.monthly_income || 0;
     const totalBills = bills.reduce((sum, b) => sum + parseFloat(b.amount || 0), 0);
     const totalSubs = subs.reduce((sum, s) => sum + parseFloat(s.amount || 0), 0);
+    const currency = profile?.currency || 'USD';
     
     return {
       monthlyIncome: income,
@@ -53,7 +55,8 @@ export default function Financing() {
       primaryTarget: income * RATIOS.PRIMARY,
       emergencyFundTarget: income * RATIOS.EMERGENCY,
       flexTarget: income * RATIOS.FLEX,
-      currentActualExpenses: totalBills + totalSubs
+      currentActualExpenses: totalBills + totalSubs,
+      currency
     };
   };
 
@@ -113,7 +116,7 @@ export default function Financing() {
         </div>
         <div className="bg-slate-800/50 px-4 py-2 rounded-2xl border border-slate-700/50">
           <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Monthly Income</p>
-          <p className="text-2xl font-black text-blue-400">${data.monthlyIncome.toLocaleString()}</p>
+          <p className="text-2xl font-black text-blue-400">{formatCurrency(data.monthlyIncome, data.currency)}</p>
         </div>
       </div>
 
@@ -143,7 +146,7 @@ export default function Financing() {
                   {item.ratio}
                 </span>
               </div>
-              <p className="text-2xl font-black">${item.amount.toLocaleString()}</p>
+              <p className="text-2xl font-black">{formatCurrency(item.amount, data.currency)}</p>
               <p className="text-xs text-slate-500 mt-1">{item.desc}</p>
             </motion.div>
           ))}
@@ -195,12 +198,12 @@ export default function Financing() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Your Current Bills</p>
-                <p className="text-3xl font-black">${data.currentActualExpenses.toLocaleString()}</p>
+                <p className="text-3xl font-black">{formatCurrency(data.currentActualExpenses, data.currency)}</p>
               </div>
               <ArrowRight className="w-6 h-6 text-slate-700" />
               <div className="text-right">
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Allowed Target</p>
-                <p className="text-3xl font-black text-blue-400">${data.primaryTarget.toLocaleString()}</p>
+                <p className="text-3xl font-black text-blue-400">{formatCurrency(data.primaryTarget, data.currency)}</p>
               </div>
             </div>
 
@@ -213,8 +216,8 @@ export default function Financing() {
 
             <p className="text-sm text-slate-400 leading-relaxed italic">
               {primaryStatus 
-                ? `Great job! You have $${(data.primaryTarget - data.currentActualExpenses).toLocaleString()} remaining in your primary budget for other essential self-spending.`
-                : `Caution: Your fixed bills exceed the 50% recommendation by $${(data.currentActualExpenses - data.primaryTarget).toLocaleString()}. Consider reviewing your subscriptions or fixed costs.`
+                ? `Great job! You have ${formatCurrency(data.primaryTarget - data.currentActualExpenses, data.currency)} remaining in your primary budget for other essential self-spending.`
+                : `Caution: Your fixed bills exceed the 50% recommendation by ${formatCurrency(data.currentActualExpenses - data.primaryTarget, data.currency)}. Consider reviewing your subscriptions or fixed costs.`
               }
             </p>
           </div>
@@ -228,18 +231,18 @@ export default function Financing() {
             </div>
             <h3 className="text-xl font-black text-emerald-400 mb-2">30% Security Shield</h3>
             <p className="text-sm text-slate-400 mb-8 max-w-sm">
-              We recommend dedicating 30% of your income ($${data.emergencyFundTarget.toLocaleString()}/mo) 
+              We recommend dedicating 30% of your income ({formatCurrency(data.emergencyFundTarget, data.currency)}/mo) 
               specifically to an emergency fund until you have 6 months of expenses covered.
             </p>
             
             <div className="flex items-center gap-4">
               <div className="p-4 bg-slate-900/80 rounded-2xl border border-slate-800 flex-1">
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Monthly Goal</p>
-                <p className="text-xl font-black text-white">${data.emergencyFundTarget.toLocaleString()}</p>
+                <p className="text-xl font-black text-white">{formatCurrency(data.emergencyFundTarget, data.currency)}</p>
               </div>
               <div className="p-4 bg-slate-900/80 rounded-2xl border border-slate-800 flex-1">
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Yearly Outlook</p>
-                <p className="text-xl font-black text-emerald-400">${(data.emergencyFundTarget * 12).toLocaleString()}</p>
+                <p className="text-xl font-black text-emerald-400">{formatCurrency(data.emergencyFundTarget * 12, data.currency)}</p>
               </div>
             </div>
           </div>
